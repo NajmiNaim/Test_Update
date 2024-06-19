@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Confession</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            text-align: center;
+            padding: 50px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #ff6347;
+        }
+        .response {
+            margin-top: 20px;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.2/firebase-firestore.js"></script>
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentQuestion = 'single';
+        let answers = {};
+
+        function handleResponse(response) {
+            const questionContainer = document.getElementById('questionContainer');
+            const responseContainer = document.getElementById('responseContainer');
+            answers[currentQuestion] = response;
+
+            if (currentQuestion === 'single') {
+                if (response === 'Yes') {
+                    questionContainer.innerHTML = `I wanna tell you something.`;
+                    responseContainer.innerHTML = `
+                        <button onclick="handleResponse('What')">What</button>
+                        <button onclick="handleResponse('Not interested')">Not interested</button>
+                    `;
+                    currentQuestion = 'tell';
+                } else {
+                    responseContainer.innerHTML = `That’s okay! I really appreciate your honesty and value our friendship.`;
+                    submitAnswers();
+                }
+            } else if (currentQuestion === 'tell') {
+                if (response === 'What') {
+                    questionContainer.innerHTML = `You are really special to me, and I have feelings for you. I hope this doesn't change our friendship, but I just needed to let you know.`;
+                    responseContainer.innerHTML = `
+                        <button onclick="handleResponse('Yes, I feel the same')">I feel the same</button>
+                        <button onclick="handleResponse('No, I see you as a friend')">I see you as a friend</button>
+                    `;
+                    currentQuestion = 'feelings';
+                } else if (response === 'Not interested') {
+                    responseContainer.innerHTML = 'That’s okay! I appreciate your honesty.';
+                    submitAnswers();
+                }
+            } else if (currentQuestion === 'feelings') {
+                if (response === 'Yes, I feel the same') {
+                    questionContainer.innerHTML = 'Would you like to go on a date with me?';
+                    responseContainer.innerHTML = `
+                        <button onclick="handleResponse('Yes')">Yes</button>
+                        <button onclick="handleResponse('No')">No</button>
+                    `;
+                    currentQuestion = 'date';
+                } else if (response === 'No, I see you as a friend') {
+                    responseContainer.innerHTML = 'That’s okay! I appreciate your honesty.';
+                    submitAnswers();
+                }
+            } else if (currentQuestion === 'date') {
+                if (response === 'Yes') {
+                    questionContainer.innerHTML = 'When are you free to go out?';
+                    responseContainer.innerHTML = `
+                        <input type="text" id="dateInput" placeholder="Enter a date...">
+                        <button onclick="handleDate()">Send</button>
+                    `;
+                    currentQuestion = 'schedule';
+                } else {
+                    responseContainer.innerHTML = 'Maybe another time then.';
+                    submitAnswers();
+                }
+            } else if (currentQuestion === 'schedule') {
+                const dateInput = document.getElementById('dateInput').value;
+                answers['schedule'] = dateInput;
+                responseContainer.innerHTML = `Let's meet on "${dateInput}". Looking forward to it!`;
+                submitAnswers();
+            }
+        }
+
+        function handleDate() {
+            const dateInput = document.getElementById('dateInput').value;
+            answers['schedule'] = dateInput;
+            const responseContainer = document.getElementById('responseContainer');
+            responseContainer.innerHTML = `Let's meet on "${dateInput}". Looking forward to it!`;
+            submitAnswers();
+        }
+
+        function submitAnswers() {
+            db.collection("responses").add(answers)
+            .then(() => {
+                console.log("Response recorded");
+            })
+            .catch((error) => {
+                console.error("Error adding document: ", error);
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>My Confession</h1>
+        <div id="content">
+            <p id="questionContainer">Are you single?</p>
+            <div id="responseContainer" class="response">
+                <button onclick="handleResponse('Yes')">Yes</button>
+                <button onclick="handleResponse('No')">No</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
